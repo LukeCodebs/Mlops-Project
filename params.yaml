@@ -1,0 +1,28 @@
+data:
+  raw_train: "data/raw/train.csv"
+  raw_later: "data/raw/later.csv"
+  holdout_features: "data/raw/holdout_features.csv"
+  cleaned_train: "data/cleaned_train.csv"
+features:
+  numeric:
+    - "loom_age_yr"
+    - "thread_count"
+    - "power_cuts_min"
+    - "weaver_exp_yr"
+    - "humidity_pct"
+    - "shift_hours"
+  categorical:
+    - "fabric"
+    - "shed"
+target: "metres_per_shift"
+model:
+  random_state: 42
+  n_estimators: 100
+  max_depth: 10
+monitoring:
+  later_split_ratio: 0.70
+  psi_bins: 10
+  promotion_improvement_threshold: 0.05
+api:
+  host: "0.0.0.0"
+  port: 8000
