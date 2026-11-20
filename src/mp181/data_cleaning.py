@@ -1,114 +1,100 @@
+"""
+MP181 - Data Analysis & Cleaning
+Group G037 - Power Loom Output Prediction
+
+Run this script to find all 7 data problems in train.csv.
+Usage: python -m src.mp181.data_cleaning
+"""
+
 import pandas as pd
 import numpy as np
 
-def clean_fabric_column(series: pd.Series) -> pd.Series:
-    """Standardizes fabric column to exactly 3 true levels: cotton, polyester, silk."""
-    cleaned = series.astype(str).str.strip().str.lower()
-    
-    def map_fabric(val: str) -> str:
-        if "sil" in val:
-            return "silk"
-        elif "cot" in val:
-            return "cotton"
-        elif "pol" in val:
-            return "polyester"
-        return val
+# ── Load data ────────────────────────────────────────────────────────────────
+train   = pd.read_csv("data/raw/train.csv")
+holdout = pd.read_csv("data/raw/holdout_features.csv")
+later   = pd.read_csv("data/raw/later.csv")
 
-    return cleaned.apply(map_fabric)
+print("=" * 60)
+print(f"Train shape : {train.shape}")
+print(f"Later shape : {later.shape}")
+print(f"Holdout shape: {holdout.shape}")
 
-def clean_data(df: pd.DataFrame, is_train: bool = True) -> pd.DataFrame:
-    """
-    Cleans raw dataframe by resolving identified data issues:
-    1. Removes duplicate rows
-    2. Drops leaking column metres_checked_at_folding
-    3. Corrects unit mixup: loom_age_yr recorded in months for Shed 1 (divide by 12)
-    4. Fixes spelling variants in fabric column
-    """
-    df = df.copy()
-    
-    if is_train:
-        # 1. Remove duplicate rows
-        df = df.drop_duplicates()
-        
-        # 2. Drop leaking column if present
-        if "metres_checked_at_folding" in df.columns:
-            df = df.drop(columns=["metres_checked_at_folding"])
-            
-    # 3. Correct unit mixup for Shed 1 (loom_age_yr was in months, divide by 12)
-    if "loom_age_yr" in df.columns and "shed" in df.columns:
-        shed1_mask = df["shed"].astype(str).str.strip() == "Shed 1"
-        df.loc[shed1_mask, "loom_age_yr"] = df.loc[shed1_mask, "loom_age_yr"] / 12.0
-        
-    # 4. Standardize fabric names
-    if "fabric" in df.columns:
-        df["fabric"] = clean_fabric_column(df["fabric"])
-        
-    return df
+# ── 1. LEAKING COLUMN ────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("1. LEAKING COLUMN")
+missing_from_holdout = [c for c in train.columns if c not in holdout.columns]
+print(f"   Columns in train but NOT in holdout: {missing_from_holdout}")
+# Check correlation with target
+numeric = train.select_dtypes(include="number")
+corr = numeric.corr()["metres_per_shift"].drop("metres_per_shift").abs().sort_values(ascending=False)
+print("   Correlation with target:")
+print(corr.to_string())
 
-def audit_seven_problems(train_raw_path: str, holdout_raw_path: str = None) -> dict:
-    """Audits train.csv against the 7 defined data issues."""
-    df = pd.read_csv(train_raw_path)
-    
-    # 1. Leaking column
-    leaking_present = "metres_checked_at_folding" in df.columns
-    
-    # 2. Unit mixup
-    # Compare loom_age_yr mean in Shed 1 vs other sheds
-    shed1_mean = df[df['shed'] == 'Shed 1']['loom_age_yr'].mean()
-    shed2_mean = df[df['shed'] == 'Shed 2']['loom_age_yr'].mean()
-    unit_mixup_present = (shed1_mean / shed2_mean) > 5.0
-    
-    # 3. Sentinel value
-    sentinel_present = False
-    
-    # 4. Duplicate rows
-    dup_count = int(df.duplicated().sum())
-    dup_present = dup_count > 0
-    
-    # 5. Stuck sensor
-    stuck_present = False
-    
-    # 6. Target typos
-    target_typo_present = False
-    
-    # 7. Spelling variants
-    raw_fabric_levels = df['fabric'].nunique()
-    spelling_present = raw_fabric_levels > 3
-    
-    return {
-        "leaking_column": {
-            "present": leaking_present,
-            "column": "metres_checked_at_folding" if leaking_present else None
-        },
-        "unit_mixup": {
-            "present": unit_mixup_present,
-            "column": "loom_age_yr" if unit_mixup_present else None,
-            "group_value": "Shed 1" if unit_mixup_present else None,
-            "factor": 12 if unit_mixup_present else None
-        },
-        "sentinel_value": {
-            "present": False,
-            "column": None,
-            "value": None,
-            "count": None
-        },
-        "duplicate_rows": {
-            "present": dup_present,
-            "count": dup_count if dup_present else None
-        },
-        "stuck_sensor": {
-            "present": False,
-            "column": None,
-            "start_date": None,
-            "end_date": None
-        },
-        "target_typos": {
-            "present": False,
-            "count": None
-        },
-        "spelling_variants": {
-            "present": spelling_present,
-            "column": "fabric" if spelling_present else None,
-            "true_levels": 3 if spelling_present else None
-        }
-    }
+# ── 2. UNIT MIXUP ────────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("2. UNIT MIXUP  (loom_age_yr per shed)")
+print(train.groupby("shed")["loom_age_yr"].describe().round(2).to_string())
+
+# ── 3. SENTINEL VALUES ───────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("3. SENTINEL VALUES")
+num_cols = ["loom_age_yr", "thread_count", "power_cuts_min",
+            "weaver_exp_yr", "humidity_pct", "shift_hours"]
+for col in num_cols:
+    vc = train[col].value_counts()
+    suspicious = vc[(vc.index < 0) | (vc.index >= 900)]
+    if not suspicious.empty:
+        print(f"   ⚠  {col}: {suspicious.to_dict()}")
+    # Also flag -999, -1, 999, 9999
+    for val in [-1, -999, 999, 9999]:
+        count = (train[col] == val).sum()
+        if count > 0:
+            print(f"   ⚠  {col} has sentinel {val} appearing {count} times")
+print("   (no output above = no sentinel values found)")
+
+# ── 4. DUPLICATE ROWS ────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("4. DUPLICATE ROWS")
+dups = train.duplicated().sum()
+print(f"   Extra duplicate rows: {dups}")
+if dups > 0:
+    print(train[train.duplicated(keep=False)].head(4).to_string())
+
+# ── 5. STUCK SENSOR ──────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("5. STUCK SENSOR")
+train_s = train.sort_values("date").reset_index(drop=True)
+for col in num_cols:
+    grp = (train_s[col] != train_s[col].shift()).cumsum()
+    runs = train_s.groupby(grp).agg(
+        value=(col, "first"),
+        count=(col, "count"),
+        start=("date", "first"),
+        end=("date", "last")
+    )
+    long = runs[runs["count"] >= 10]
+    if not long.empty:
+        print(f"   ⚠  STUCK: {col}")
+        print(long.to_string())
+
+# ── 6. TARGET TYPOS ──────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("6. TARGET TYPOS  (metres_per_shift)")
+print(f"   describe:\n{train['metres_per_shift'].describe().round(2).to_string()}")
+print(f"\n   Top 15 largest values:")
+print(train["metres_per_shift"].nlargest(15).values)
+
+# ── 7. SPELLING VARIANTS ─────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("7. SPELLING VARIANTS")
+for col in train.select_dtypes(include="object").columns:
+    if col in ["record_id", "date"]:
+        continue
+    print(f"\n   {col} value_counts:")
+    print(train[col].value_counts().to_string())
+    if col in later.columns:
+        print(f"   {col} in later (clean reference):")
+        print(later[col].value_counts().to_string())
+
+print("\n" + "=" * 60)
+print("ANALYSIS COMPLETE")
