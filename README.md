@@ -9,7 +9,7 @@
 | S24CSEU2733 | Pranjal Yadav |  |
 | S24CSEU2723 | Anishka Gangwar |  |
 
-**Faculty:** Amit Soni &nbsp;|&nbsp; **Batch:** 72 &nbsp;|&nbsp; **Group:** G037 &nbsp;|&nbsp; **Problem:** MP181
+**Faculty:** Amit Soni | **Batch:** 72 | **Group:** G037 | **Problem:** MP181
 
 ---
 
