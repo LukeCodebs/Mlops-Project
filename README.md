@@ -4,10 +4,10 @@
 
 | Enrolment No. | Name | Role |
 |---|---|---|
-| S24CSEU2715 | Rohan Dave | Data Lead |
-| S24CSEU2479 | Lucky Kumar | Model Lead |
-| S24CSEU2733 | Pranjal Yadav | Service Lead |
-| S24CSEU2723 | Anishka Gangwar | Ops Lead |
+| S24CSEU2715 | Rohan Dave |  |
+| S24CSEU2479 | Lucky Kumar |  |
+| S24CSEU2733 | Pranjal Yadav |  |
+| S24CSEU2723 | Anishka Gangwar |  |
 
 **Faculty:** Amit Soni &nbsp;|&nbsp; **Batch:** 72 &nbsp;|&nbsp; **Group:** G037 &nbsp;|&nbsp; **Problem:** MP181
 
