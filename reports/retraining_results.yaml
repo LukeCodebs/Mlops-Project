@@ -1,0 +1,8 @@
+v1_registry_version: 2
+v2_registry_version: 3
+v1_mae_later: 4.854515228125991
+v2_mae_later: 4.007503242545342
+improvement_pct: 17.447921075069424
+promotion_threshold_pct: 5.0
+promoted: true
+final_champion_version: 3
