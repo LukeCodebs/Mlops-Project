@@ -1,20 +1,13 @@
-# MP181 findings --- fill in every value, keep every key.
-# The marking tool reads this file. Write null only where the comment says so.
-# Use the exact column names and group values from your data files.
-
-group_id: "G037"          # your group id, e.g. "G042"
-problem_id: "MP181"
-
+group_id: G037
+problem_id: MP181
 data_issues:
-  # For each of the 7 kinds: present: true or false.
-  # If present is false, leave the other values as null.
   leaking_column:
     present: true
-    column: "metres_checked_at_folding"
+    column: metres_checked_at_folding
   unit_mixup:
     present: true
-    column: "loom_age_yr"
-    group_value: "Shed 1"
+    column: loom_age_yr
+    group_value: Shed 1
     factor: 12
   sentinel_value:
     present: false
@@ -34,17 +27,15 @@ data_issues:
     count: null
   spelling_variants:
     present: true
-    column: "fabric"
+    column: fabric
     true_levels: 3
-
 tracking:
-  experiment_name: null
-  best_run_id: null        # the MLflow run id of your v1 model
-  registered_model_name: null
-  champion_version: null
-
+  experiment_name: MP181_Power_Loom_Regression
+  best_run_id: bd5ef5f558284d8eaf28ccc85333ee49
+  registered_model_name: MP181_Power_Loom_Model
+  champion_version: 3
 monitoring:
-  psi:                     # cleaned train.csv vs later.csv, 10 bins
+  psi:
     loom_age_yr: null
     thread_count: null
     power_cuts_min: null
@@ -52,11 +43,11 @@ monitoring:
     humidity_pct: null
     shift_hours: null
   most_drifted_feature: null
-  mae_by_group:            # v1 on later.csv, per value of shed
-    'Shed 1': null
-    'Shed 2': null
-    'Shed 3': null
+  mae_by_group:
+    Shed 1: null
+    Shed 2: null
+    Shed 3: null
   worst_served_group: null
-  mae_v1_on_check: null    # v1 on the last 30% of later.csv (by date)
-  mae_v2_on_check: null    # v2 on the same rows
-  decision: null           # promote or keep
+  mae_v1_on_check: 4.8545
+  mae_v2_on_check: 4.0075
+  decision: promote
